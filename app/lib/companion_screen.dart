@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'companion_provider.dart';
 import 'rabbit_painter.dart';
 import 'models.dart';

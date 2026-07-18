@@ -6,7 +6,6 @@ import 'companion_screen.dart';
 import 'garden_screen.dart';
 import 'codex_screen.dart';
 import 'settings_screen.dart';
-import 'models.dart';
 
 void main() {
   runApp(
@@ -33,7 +32,6 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF4B5320),
-          background: const Color(0xFFFCF7EC),
         ),
         scaffoldBackgroundColor: const Color(0xFFFCF7EC),
       ),

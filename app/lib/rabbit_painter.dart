@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'models.dart';
 
 /// Dessine le lapin E*NKI en vectoriel (CustomPainter).
 /// Spec visuel (SOUL.md) : lapin humanoide blanc, grandes oreilles, yeux
