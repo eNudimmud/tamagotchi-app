@@ -18,6 +18,10 @@ jobs:
           channel: "stable"
           cache: true
 
+      - name: Generate native Android project
+        working-directory: app
+        run: flutter create --platforms=android .
+
       - name: Install dependencies
         working-directory: app
         run: flutter pub get
