@@ -1,0 +1,22 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+__pycache__/
+*.swp
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+build/
+.dart_tool/
+
+# OS
+.DS_Store
+
+# Local backend runtime
+*.log
+enki.log
