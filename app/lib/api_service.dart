@@ -39,26 +39,18 @@ class ApiService {
     return InteractResult.fromJson(jsonDecode(res.body));
   }
 
-  Future<Resources> verifyPurchase({
+  Future<Resources> grantCarrots({
     required String userId,
-    required String storeReceipt,
-    int carrot = 0,
-    int energy = 0,
-    int kiss = 0,
+    int amount = 5,
   }) async {
+    // Recolte GRATUITE (ECOS Anti-Features : aucun pay-to-care).
     final res = await _client.post(
-      Uri.parse('$kBaseUrl/iap/verify'),
+      Uri.parse('$kBaseUrl/grant'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'user_id': userId,
-        'store_receipt': storeReceipt,
-        'carrot': carrot,
-        'energy': energy,
-        'kiss': kiss,
-      }),
+      body: jsonEncode({'user_id': userId, 'amount': amount}),
     );
     if (res.statusCode != 200) {
-      throw Exception('purchase could not be applied');
+      throw Exception('recolte impossible');
     }
     return Resources.fromJson(jsonDecode(res.body));
   }

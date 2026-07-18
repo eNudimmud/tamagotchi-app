@@ -116,7 +116,7 @@ class CreatureState {
   final Mood mood;
   final int vitality;
   final int awakening;
-  final int bond;
+  final int closeness;
   final Resources resources;
   final Cycle cycle;
   final int lockCount;
@@ -129,7 +129,7 @@ class CreatureState {
     required this.mood,
     required this.vitality,
     required this.awakening,
-    required this.bond,
+    required this.closeness,
     required this.resources,
     required this.cycle,
     this.lockCount = 0,
@@ -143,7 +143,7 @@ class CreatureState {
         mood = Mood.fromJson(json['mood'] ?? {}),
         vitality = json['vitality'] ?? 0,
         awakening = json['awakening'] ?? 0,
-        bond = json['bond'] ?? 0,
+        closeness = json['closeness'] ?? 0,
         resources = Resources.fromJson(json['resources'] ?? {}),
         cycle = Cycle.fromJson(json['cycle'] ?? {}),
         lockCount = json['disjoncteur_count'] ?? 0;
@@ -161,7 +161,7 @@ class InteractResult {
   final Mood mood;
   final int vitality;
   final int awakening;
-  final int bond;
+  final int closeness;
   final Resources resources;
 
   InteractResult({
@@ -174,7 +174,7 @@ class InteractResult {
     required this.mood,
     required this.vitality,
     required this.awakening,
-    required this.bond,
+    required this.closeness,
     required this.resources,
   });
 
@@ -188,7 +188,7 @@ class InteractResult {
         mood: Mood.fromJson(json['mood'] ?? {}),
         vitality: json['vitality'] ?? 0,
         awakening: json['awakening'] ?? 0,
-        bond: json['bond'] ?? 0,
+        closeness: json['closeness'] ?? 0,
         resources: Resources.fromJson(json['resources'] ?? {}),
       );
 }

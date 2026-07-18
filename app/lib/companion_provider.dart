@@ -51,7 +51,7 @@ class CompanionProvider extends ChangeNotifier {
         mood: result.mood,
         vitality: result.vitality,
         awakening: result.awakening,
-        bond: result.bond,
+        closeness: result.closeness,
         resources: result.resources,
         cycle: creature?.cycle ?? Cycle(),
       );
@@ -74,7 +74,7 @@ class CompanionProvider extends ChangeNotifier {
           mood: creature!.mood,
           vitality: creature!.vitality,
           awakening: creature!.awakening,
-          bond: creature!.bond,
+          closeness: creature!.closeness,
           resources: creature!.resources,
           cycle: creature!.cycle,
         );
@@ -91,9 +91,9 @@ class CompanionProvider extends ChangeNotifier {
   }
 
   Future<void> buyCarrots(int amount) async {
-    // MVP: reçu simulé. En prod, déclencher l'achat store puis passer le vrai reçu.
+    // Recolte gratuite (ECOS Anti-Features : pas de pay-to-care).
     try {
-      resources = await _iap.grantCarrots(_userId, 'mock_receipt', amount);
+      resources = await _iap.grantCarrots(_userId, amount);
     } catch (e) {
       error = e.toString().replaceFirst('Exception: ', '');
     }
@@ -103,7 +103,7 @@ class CompanionProvider extends ChangeNotifier {
   String _messageFor(String m) {
     switch (m) {
       case 'no_carrot':
-        return 'Plus de carottes. Appuie sur Get 5 carrots.';
+        return 'Plus de carottes. Appuie sur Récolter.';
       case 'max_stage':
         return 'Stade maximal atteint.';
       case 'unknown_action':

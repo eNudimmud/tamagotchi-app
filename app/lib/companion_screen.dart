@@ -84,8 +84,8 @@ class CompanionScreen extends StatelessWidget {
                 Center(
                   child: OutlinedButton.icon(
                     onPressed: () => provider.buyCarrots(5),
-                    icon: const Icon(Icons.shopping_basket),
-                    label: Text('Get 5 carrots  (🥕 ${provider.resources.carrot})'),
+                    icon: const Icon(Icons.eco),
+                    label: Text('Récolter 5 🥕  (🥕 ${provider.resources.carrot})'),
                   ),
                 ),
                 const SizedBox(height: 20),
