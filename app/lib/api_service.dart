@@ -33,7 +33,7 @@ class ApiService {
     if (res.statusCode == 423) {
       throw Exception('companion is resting, try later');
     }
-    if (res.statusCode != 200) {
+    if (res.statusCode != 200 && res.statusCode != 409) {
       throw Exception('action not possible right now');
     }
     return InteractResult.fromJson(jsonDecode(res.body));
@@ -62,4 +62,15 @@ class ApiService {
     }
     return Resources.fromJson(jsonDecode(res.body));
   }
-}
+
+  Future<Map<String, dynamic>> rename(String userId, String name) async {
+    final res = await _client.post(
+      Uri.parse('$kBaseUrl/rename'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'user_id': userId, 'name': name}),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('rename failed');
+    }
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }

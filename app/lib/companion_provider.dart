@@ -13,6 +13,7 @@ class CompanionProvider extends ChangeNotifier {
   Resources resources = Resources();
   bool loading = false;
   String? error;
+  bool facingBack = false;
 
   static const String _userId = 'demo-user';
 
@@ -22,6 +23,7 @@ class CompanionProvider extends ChangeNotifier {
     notifyListeners();
     try {
       creature = await _api.getCreature();
+      resources = creature!.resources;
     } catch (e) {
       error = 'companion unavailable';
     } finally {
@@ -35,16 +37,56 @@ class CompanionProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final result = await _api.interact(_userId, kind);
+      if (!result.ok) {
+        error = _messageFor(result.message);
+        notifyListeners();
+        return;
+      }
+      // reconstruit l'etat a partir du resultat d'interaction
       creature = CreatureState(
-        id: creature?.id ?? 'companion',
+        id: creature?.id ?? _userId,
+        name: creature?.name ?? 'Enki',
         stage: result.stage,
-        stats: result.stats,
-        lockCount: creature?.lockCount ?? 0,
+        needs: result.needs,
+        mood: result.mood,
+        vitality: result.vitality,
+        awakening: result.awakening,
+        bond: result.bond,
+        resources: result.resources,
+        cycle: creature?.cycle ?? Cycle(),
       );
       resources = result.resources;
     } catch (e) {
       error = e.toString().replaceFirst('Exception: ', '');
     }
+    notifyListeners();
+  }
+
+  Future<void> rename(String name) async {
+    try {
+      await _api.rename(_userId, name);
+      if (creature != null) {
+        creature = CreatureState(
+          id: creature!.id,
+          name: name,
+          stage: creature!.stage,
+          needs: creature!.needs,
+          mood: creature!.mood,
+          vitality: creature!.vitality,
+          awakening: creature!.awakening,
+          bond: creature!.bond,
+          resources: creature!.resources,
+          cycle: creature!.cycle,
+        );
+      }
+    } catch (e) {
+      error = e.toString().replaceFirst('Exception: ', '');
+    }
+    notifyListeners();
+  }
+
+  void toggleFacing() {
+    facingBack = !facingBack;
     notifyListeners();
   }
 
@@ -56,5 +98,18 @@ class CompanionProvider extends ChangeNotifier {
       error = e.toString().replaceFirst('Exception: ', '');
     }
     notifyListeners();
+  }
+
+  String _messageFor(String m) {
+    switch (m) {
+      case 'no_carrot':
+        return 'Plus de carottes. Appuie sur Get 5 carrots.';
+      case 'max_stage':
+        return 'Stade maximal atteint.';
+      case 'unknown_action':
+        return 'Action inconnue.';
+      default:
+        return '';
+    }
   }
 }

@@ -1,24 +1,98 @@
-/// Modèles partagés entre l'app et le backend.
+/// Modèles partagés entre l'app et le backend ENKI Tamagotchi v2.
 
-enum Stage { egg, rabbit, humanoid, agent, incarnation }
+enum Stage { egg, rabbit, apprentice, gardener, guardian }
 
-class Stats {
-  final int vitality;
-  final int awakening;
-  final int bond;
+extension StageName on Stage {
+  String get label {
+    switch (this) {
+      case Stage.egg:
+        return 'Egg';
+      case Stage.rabbit:
+        return 'Rabbit';
+      case Stage.apprentice:
+        return 'Apprentice';
+      case Stage.gardener:
+        return 'Gardener';
+      case Stage.guardian:
+        return 'Guardian';
+    }
+  }
+}
 
-  Stats({this.vitality = 50, this.awakening = 0, this.bond = 0});
+class Needs {
+  final int hunger;
+  final int energy;
+  final int hygiene;
+  final int social;
+  final int fun;
 
-  Stats.fromJson(Map<String, dynamic> json)
-      : vitality = json['vitality'] ?? 0,
-        awakening = json['awakening'] ?? 0,
-        bond = json['bond'] ?? 0;
+  Needs({this.hunger = 70, this.energy = 70, this.hygiene = 80, this.social = 60, this.fun = 60});
 
-  Stats copyWith({int? vitality, int? awakening, int? bond}) => Stats(
-        vitality: vitality ?? this.vitality,
-        awakening: awakening ?? this.awakening,
-        bond: bond ?? this.bond,
-      );
+  Needs.fromJson(Map<String, dynamic> json)
+      : hunger = json['hunger'] ?? 0,
+        energy = json['energy'] ?? 0,
+        hygiene = json['hygiene'] ?? 0,
+        social = json['social'] ?? 0,
+        fun = json['fun'] ?? 0;
+}
+
+class Mood {
+  final String state;
+  final int score;
+
+  Mood({this.state = 'content', this.score = 50});
+
+  Mood.fromJson(Map<String, dynamic> json)
+      : state = json['state'] ?? 'content',
+        score = json['score'] ?? 0;
+
+  String get label {
+    switch (state) {
+      case 'happy':
+        return 'Joyeux';
+      case 'content':
+        return 'Paisible';
+      case 'hungry':
+        return 'Affamé';
+      case 'sleepy':
+        return 'Sommeil';
+      case 'sick':
+        return 'Patraque';
+      case 'bored':
+        return 'Ennuyé';
+      case 'sad':
+        return 'Morose';
+      default:
+        return state;
+    }
+  }
+}
+
+class Cycle {
+  final bool isDay;
+  final String phase;
+  final int dayCount;
+
+  Cycle({this.isDay = true, this.phase = 'new', this.dayCount = 0});
+
+  Cycle.fromJson(Map<String, dynamic> json)
+      : isDay = json['is_day'] ?? true,
+        phase = json['phase'] ?? 'new',
+        dayCount = json['day_count'] ?? 0;
+
+  String get phaseLabel {
+    const m = {
+      'new': 'Nouvelle lune',
+      'waxing_crescent': 'Croissant ascendant',
+      'first_quarter': 'Premier quartier',
+      'waxing_gibbous': 'Gibbeuse ascendante',
+      'full': 'Pleine lune',
+      'waning_gibbous': 'Gibbeuse descendante',
+      'last_quarter': 'Dernier quartier',
+      'waning_crescent': 'Croissant descendant',
+    };
+    return m[phase] ?? phase;
+  }
 }
 
 class Resources {
@@ -36,46 +110,85 @@ class Resources {
 
 class CreatureState {
   final String id;
+  final String name;
   final Stage stage;
-  final Stats stats;
+  final Needs needs;
+  final Mood mood;
+  final int vitality;
+  final int awakening;
+  final int bond;
+  final Resources resources;
+  final Cycle cycle;
   final int lockCount;
 
   CreatureState({
     required this.id,
+    required this.name,
     required this.stage,
-    required this.stats,
+    required this.needs,
+    required this.mood,
+    required this.vitality,
+    required this.awakening,
+    required this.bond,
+    required this.resources,
+    required this.cycle,
     this.lockCount = 0,
   });
 
   CreatureState.fromJson(Map<String, dynamic> json)
       : id = json['id'] ?? '',
+        name = json['name'] ?? 'Enki',
         stage = Stage.values[json['stage'] ?? 1],
-        stats = Stats.fromJson(json['stats'] ?? {}),
+        needs = Needs.fromJson(json['needs'] ?? {}),
+        mood = Mood.fromJson(json['mood'] ?? {}),
+        vitality = json['vitality'] ?? 0,
+        awakening = json['awakening'] ?? 0,
+        bond = json['bond'] ?? 0,
+        resources = Resources.fromJson(json['resources'] ?? {}),
+        cycle = Cycle.fromJson(json['cycle'] ?? {}),
         lockCount = json['disjoncteur_count'] ?? 0;
 }
 
-enum ActionKind { feed, pet, play, evolve, task }
+enum ActionKind { feed, pet, play, sleep, clean, train, talk, evolve }
 
 class InteractResult {
+  final bool ok;
+  final String message;
   final bool progressed;
   final String? progressSignature;
   final Stage stage;
-  final Stats stats;
+  final Needs needs;
+  final Mood mood;
+  final int vitality;
+  final int awakening;
+  final int bond;
   final Resources resources;
 
   InteractResult({
+    required this.ok,
+    this.message = '',
     required this.progressed,
     this.progressSignature,
     required this.stage,
-    required this.stats,
+    required this.needs,
+    required this.mood,
+    required this.vitality,
+    required this.awakening,
+    required this.bond,
     required this.resources,
   });
 
   factory InteractResult.fromJson(Map<String, dynamic> json) => InteractResult(
+        ok: json['ok'] ?? true,
+        message: json['message'] ?? '',
         progressed: json['progressed'] ?? false,
         progressSignature: json['progress_signature'],
         stage: Stage.values[json['stage'] ?? 1],
-        stats: Stats.fromJson(json['stats'] ?? {}),
+        needs: Needs.fromJson(json['needs'] ?? {}),
+        mood: Mood.fromJson(json['mood'] ?? {}),
+        vitality: json['vitality'] ?? 0,
+        awakening: json['awakening'] ?? 0,
+        bond: json['bond'] ?? 0,
         resources: Resources.fromJson(json['resources'] ?? {}),
       );
 }
