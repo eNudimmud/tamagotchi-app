@@ -20,6 +20,7 @@ Aucune dependance externe : http.server stdlib uniquement. Tourne sur Termux.
 import json
 import time
 import os
+import urllib.parse
 from enum import IntEnum
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
