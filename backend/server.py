@@ -30,7 +30,7 @@ EVENT_FILE = os.path.join(HERE, "enki_events.jsonl")
 
 FLOOR = 25  # besoins ne descendent jamais sous ce plancher -> creature jamais "affamee"/"morte" par absence
 SCHEMA_VERSION = 1
-PRODUCER = {"module": "enki-tamagotchi-backend", "version": "3.0.0"}
+PRODUCER = {"module": "enki-tamagotchi-backend", "version": "3.1.0"}
 ACTIONS = {"feed", "pet", "play", "sleep", "clean", "train", "talk", "evolve"}
 
 STAGE_NAMES = {0: "EGG", 1: "RABBIT", 2: "APPRENTICE", 3: "GARDENER", 4: "GUARDIAN"}
@@ -134,21 +134,44 @@ class EStar:
         moon_idx = int((day_idx % (MOON_PERIOD_DAYS * len(MOON_PHASES))) // MOON_PERIOD_DAYS) % len(MOON_PHASES)
         return {"is_day": is_day, "phase": MOON_PHASES[moon_idx], "day_count": day_idx}
 
-    # --- audit / event sourcing (SC-006 append-only, eStarId-scoped) ---
-    def emit(self, event_type, payload):
+    # --- audit / event sourcing (DomainEvent.v1 strict, SC-006 append-only, eStarId-scoped) ---
+    def emit(self, event_type, payload, category=None, sensitivity="PUBLIC"):
+        # category derivee du catalogue d'eventTypes canoniques (AGGREGATE.EVENT)
+        if category is None:
+            cat = event_type.split(".")[0].upper()
+            category = {
+                "E_STAR": "ESTAR",
+                "GUARDIAN": "GUARDIAN",
+                "SOUL": "SOUL",
+                "IDENTITY": "IDENTITY",
+                "PERSONALITY": "PERSONALITY",
+                "LIFE": "LIFE",
+                "COGNITIVE": "COGNITIVE",
+                "RELATIONSHIP": "RELATIONSHIP",
+                "MEMORY": "MEMORY",
+                "CONSTRAINT": "CONSTRAINT",
+                "DECISION": "DECISION",
+                "TOOL": "TOOL",
+                "RESOURCE": "RESOURCE",
+            }.get(cat, "SYSTEM")
+        # aggregateVersion : compteur monotone par eStarId (garantit replay/optimistic concurrency)
+        self.aggregate_version = getattr(self, "aggregate_version", 0) + 1
+        now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         rec = {
             "eventId": f"evt_{int(time.time()*1000)}_{os.urandom(2).hex()}",
             "eventType": event_type,
-            "category": "ECOS",
+            "category": category,
             "aggregateType": "EStar",
             "aggregateId": self.e_star_id,
+            "aggregateVersion": self.aggregate_version,
             "eStarId": self.e_star_id,
             "payload": payload,
-            "occurredAt": time.time(),
-            "recordedAt": time.time(),
+            "occurredAt": now_iso,
+            "recordedAt": now_iso,
             "schemaVersion": SCHEMA_VERSION,
+            "correlationId": f"corr_{self.e_star_id}_{self.aggregate_version}",
             "producer": PRODUCER,
-            "sensitivity": "INTERNAL",
+            "sensitivity": sensitivity,
         }
         try:
             with open(EVENT_FILE, "a", encoding="utf-8") as f:
@@ -237,7 +260,7 @@ class EStar:
     def harvest(self, amount=5):
         amount = max(1, min(20, int(amount)))
         self.carrots += amount
-        self.emit("RESOURCES.GRANTED", {"kind": "carrot", "amount": amount, "gratis": True})
+        self.emit("RESOURCE.GRANTED", {"kind": "carrot", "amount": amount, "gratis": True})
         self.save()
         return amount
 
@@ -261,6 +284,7 @@ class EStar:
             "last": self.last,
             "disjoncteur": self.disjoncteur,
             "life_state": self.life_state,
+            "aggregate_version": getattr(self, "aggregate_version", 0),
         }
 
     def save(self):
@@ -294,6 +318,7 @@ class EStar:
         obj.last = d.get("last", time.time())
         obj.disjoncteur = d.get("disjoncteur", 0)
         obj.life_state = d.get("life_state", "IDLE")
+        obj.aggregate_version = d.get("aggregate_version", 0)
         obj._loaded = True
         return obj
 
