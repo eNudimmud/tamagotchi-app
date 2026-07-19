@@ -1,3 +1,6 @@
+enki_state.json
+enki_events.jsonl
+enki_token.txt
+enki_home/
 __pycache__/
-.venv/
 *.pyc

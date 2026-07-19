@@ -1,0 +1,26 @@
+name: backend-tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Selftest du moteur (loi ECOS — 20 tests, invariants C1-C9)
+        working-directory: backend
+        run: python3 moteur.py --selftest
+
+      - name: Tests d'integration HTTP (jeton, pipeline talk/confirm, modes)
+        working-directory: backend
+        run: python3 tests/test_server.py

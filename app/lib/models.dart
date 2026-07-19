@@ -192,3 +192,57 @@ class InteractResult {
         resources: Resources.fromJson(json['resources'] ?? {}),
       );
 }
+
+
+/// ── Esprit v0.4 (loi ECOS) : conversation & cartes de permission ──────────
+
+class PendingAction {
+  final String actionId;
+  final String outil;
+  final int niveau;
+  final String carte;
+  final String raison;
+  final bool strongRequired;
+  final int expire;
+
+  PendingAction.fromJson(Map<String, dynamic> json)
+      : actionId = json['action_id'] ?? '',
+        outil = json['outil'] ?? '',
+        niveau = json['niveau'] ?? 0,
+        carte = json['carte'] ?? '',
+        raison = json['raison'] ?? '',
+        strongRequired = json['strong_required'] ?? false,
+        expire = json['expire'] ?? 0;
+}
+
+class TalkReply {
+  final List<String> reply;
+  final PendingAction? pending;
+  final List<Map<String, dynamic>> evenements;
+
+  TalkReply.fromJson(Map<String, dynamic> json)
+      : reply = (json['reply'] as List? ?? const []).cast<String>(),
+        pending = json['pending'] == null
+            ? null
+            : PendingAction.fromJson(json['pending']),
+        evenements = (json['evenements'] as List? ?? const [])
+            .cast<Map<String, dynamic>>();
+}
+
+class ConfirmResult {
+  final int statusCode;
+  final String decision;
+  final String? evenement;
+  final bool verifie;
+  final Map<String, dynamic>? sortie;
+  final List<String> reply;
+  final String? reason;
+
+  ConfirmResult.fromJson(Map<String, dynamic> json, this.statusCode)
+      : decision = json['decision'] ?? '',
+        evenement = json['evenement'],
+        verifie = json['verifie'] ?? false,
+        sortie = json['sortie'] as Map<String, dynamic>?,
+        reply = (json['reply'] as List? ?? const []).cast<String>(),
+        reason = json['reason'];
+}

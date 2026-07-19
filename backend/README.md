@@ -1,46 +1,17 @@
-# ENKI Tamagotchi — Backend (Termux / local, zero-dependency)
+# Backend v4 — corps v3 + esprit v0.4 (loi ECOS)
 
-Single-file Python stdlib HTTP server. **No pip, no venv, no FastAPI/uvicorn/pydantic.**
-Runs on Android Termux (bionic) where `pydantic-core` cannot compile.
+- `server.py` — couche HTTP fine (stdlib `http.server`), jeton local, verrou
+  d'écriture unique. Ne contient aucune logique de créature.
+- `moteur.py` — le moteur v0.4 : émotions, mémoire épistémique à provenance,
+  promesses, registre d'outils N0–N4, confirmations par hash, modes système,
+  audit append-only. **Référence exécutable** : `python3 moteur.py --selftest`
+  (20 tests, invariants constitutionnels C1–C9).
+- `tests/test_server.py` — 11 tests d'intégration HTTP (vrai serveur, vrai
+  disque) : jeton, anti pay-to-love, pipeline /talk → /confirm à usage unique,
+  READ_ONLY, provenance, export, isolation des identités.
 
-## Deploy on Termux (Android)
+Fichiers générés (ignorés par git) : `enki_token.txt`, `enki_state.json`,
+`enki_events.jsonl`, `enki_home/<user_id>/`.
 
-```bash
-# 1. paste the server into the phone (via heredoc in Termux)
-cat > ~/enki_backend.py << 'PYEOF'
-<content of server.py>
-PYEOF
-
-# 2. launch in background
-nohup python ~/enki_backend.py > ~/enki.log 2>&1 &
-
-# 3. check
-curl 127.0.0.1:8000/health
-# -> {"status":"ok"}
-```
-
-The Flutter app (built separately as an APK) talks to `http://localhost:8000`.
-
-## Endpoints
-
-| Method | Path | Response |
-|---|---|---|
-| GET | `/health` | `{"status":"ok"}` |
-| GET | `/creature?user_id=demo` | `CreatureState` (id, stage, stats, resources) |
-| POST | `/interact` `{user_id, type}` | `InteractResult` (progressed, progress_signature, stage, stats, resources) |
-| POST | `/iap/verify` `{user_id, carrot, energy, kiss}` | `Resources` |
-
-## Contract (matches the Flutter companion app)
-
-```jsonc
-CreatureState {
-  "id": "demo", "stage": 1, "stage_name": "RABBIT",
-  "stats": {"vitality": 50, "awakening": 0, "bond": 0},
-  "resources": {"carrot": 0, "energy": 0, "kiss": 0},
-  "progressed": false, "progress_signature": null, "disjoncteur_count": 0
-}
-InteractResult {
-  "progressed": true, "progress_signature": "24241ffb2fa5da1c",
-  "stage": 1, "stats": {...}, "resources": {...}
-}
-```
+La hiérarchie d'autorité : `docs/foundation/` > `docs/ecos-alignment.md` >
+ce code. En cas de doute sur un comportement, le selftest du moteur fait foi.

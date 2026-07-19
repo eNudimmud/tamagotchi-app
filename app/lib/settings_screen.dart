@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'api_service.dart';
 import 'models.dart';
 
 /// Ecran Reglages : nom du compagnon, pronoms, notifications, theme.
@@ -29,6 +30,19 @@ class SettingsScreen extends StatelessWidget {
             onPressed: () => onRename(nameCtrl.text.trim()),
             icon: const Icon(Icons.save),
             label: const Text('Enregistrer le nom'),
+          ),
+          const Divider(height: 28),
+          TextField(
+            controller: TextEditingController(text: ApiService.token),
+            obscureText: true,
+            onChanged: (v) => ApiService.token = v.trim(),
+            decoration: const InputDecoration(
+              labelText: 'Jeton local (X-Enki-Token)',
+              helperText:
+                  'Affiché au démarrage du backend (backend/enki_token.txt). '
+                  'Ferme l\'API locale aux autres apps du téléphone.',
+              border: OutlineInputBorder(),
+            ),
           ),
           const Divider(height: 28),
           SwitchListTile(

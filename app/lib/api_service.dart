@@ -16,8 +16,19 @@ class ApiService {
 
   ApiService([http.Client? client]) : _client = client ?? http.Client();
 
+  /// Jeton local du backend (backend/enki_token.txt).
+  /// Sur Android, 127.0.0.1 est accessible à toutes les apps : le jeton ferme la porte.
+  /// Fourni au build (--dart-define=ENKI_TOKEN=...) ou saisi dans Réglages.
+  static String token = const String.fromEnvironment('ENKI_TOKEN', defaultValue: '');
+
+  Map<String, String> get _headers => {
+        'Content-Type': 'application/json',
+        if (token.isNotEmpty) 'X-Enki-Token': token,
+      };
+
   Future<CreatureState> getCreature() async {
-    final res = await _client.get(Uri.parse('$kBaseUrl/creature'));
+    final res =
+        await _client.get(Uri.parse('$kBaseUrl/creature'), headers: _headers);
     if (res.statusCode != 200) {
       throw Exception('companion unavailable');
     }
@@ -27,7 +38,7 @@ class ApiService {
   Future<InteractResult> interact(String userId, ActionKind kind) async {
     final res = await _client.post(
       Uri.parse('$kBaseUrl/interact'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers,
       body: jsonEncode({'user_id': userId, 'type': kind.name}),
     );
     if (res.statusCode == 423) {
@@ -46,7 +57,7 @@ class ApiService {
     // Recolte GRATUITE (ECOS Anti-Features : aucun pay-to-care).
     final res = await _client.post(
       Uri.parse('$kBaseUrl/grant'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers,
       body: jsonEncode({'user_id': userId, 'amount': amount}),
     );
     if (res.statusCode != 200) {
@@ -55,10 +66,40 @@ class ApiService {
     return Resources.fromJson(jsonDecode(res.body));
   }
 
+  /// Un tour de conversation : l'esprit répond et peut PROPOSER une action.
+  /// Rien n'est exécuté ici — l'exécution attend confirm() (loi ECOS, Art. 14).
+  Future<TalkReply> talk(String userId, String text) async {
+    final res = await _client.post(
+      Uri.parse('$kBaseUrl/talk'),
+      headers: _headers,
+      body: jsonEncode({'user_id': userId, 'text': text}),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('conversation impossible (${res.statusCode})');
+    }
+    return TalkReply.fromJson(jsonDecode(res.body));
+  }
+
+  /// Réponse du gardien à une carte de permission. Usage unique, expirable.
+  Future<ConfirmResult> confirm(String userId, String actionId, bool approve,
+      {bool strong = false}) async {
+    final res = await _client.post(
+      Uri.parse('$kBaseUrl/confirm'),
+      headers: _headers,
+      body: jsonEncode({
+        'user_id': userId,
+        'action_id': actionId,
+        'approve': approve,
+        'strong': strong,
+      }),
+    );
+    return ConfirmResult.fromJson(jsonDecode(res.body), res.statusCode);
+  }
+
   Future<Map<String, dynamic>> rename(String userId, String name) async {
     final res = await _client.post(
       Uri.parse('$kBaseUrl/rename'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers,
       body: jsonEncode({'user_id': userId, 'name': name}),
     );
     if (res.statusCode != 200) {

@@ -1,41 +1,83 @@
-# ENKI Tamagotchi — Backend (Termux, 100% stdlib, zéro dépendance)
+# ENKI Tamagotchi — Backend v4 (Termux, 100 % stdlib, zéro dépendance)
 
-## 1. Sur Termux (tel) — extraire le tarball reçu
-```
-cd ~
-tar xzf enki-tamagotchi.tar.gz
-cd tamagotchi/backend
-```
+Corps v3 (jauges, stades, carottes gratuites) + esprit v0.4 sous loi ECOS
+(mémoire à provenance, promesses, permissions, audit, modes honnêtes).
+Voir `docs/foundation/` (la loi), `docs/ecos-alignment.md` (le pacte),
+`docs/BACKEND_API.md` (le contrat HTTP).
 
-## 2. Lancer le backend (Python système uniquement — aucun pip/uv needed)
+## 1. Lancer le backend (Python système uniquement — aucun pip)
+
 ```
-cd /data/data/com.termux/files/home/tamagotchi/backend
-pkill -f "app.main" 2>/dev/null; sleep 1
-python app/main.py > ~/enki.log 2>&1 &
+cd ~/tamagotchi-app/backend
+pkill -f "server.py" 2>/dev/null; sleep 1
+python server.py > ~/enki.log 2>&1 &
 sleep 2
-curl 127.0.0.1:8000/health
 cat ~/enki.log
 ```
 
-Tu dois voir : `{"status":"ok"}` et `ENKI Tamagotchi Backend on http://127.0.0.1:8000`
+Le log affiche l'URL et **le jeton local** (aussi dans `backend/enki_token.txt`) :
 
-## 3. Tester les endpoints (depuis Termux)
 ```
-curl 127.0.0.1:8000/creature
-curl -X POST 127.0.0.1:8000/iap/verify -H "Content-Type: application/json" -d '{"user_id":"demo","store_receipt":"mock","carrot":5}'
-curl -X POST 127.0.0.1:8000/interact -H "Content-Type: application/json" -d '{"user_id":"demo","type":"feed"}'
+ENKI Tamagotchi Backend v4 (corps v3 + esprit 0.4.0-ref, loi ECOS)
+  http://127.0.0.1:8000
+  jeton local (X-Enki-Token) : <JETON>
 ```
 
-## 4. Flutter app (Option A recommandée : build externe)
-L'app pointe sur `http://localhost:8000` (tel physique OK).
-Compiler l'APK sur PC/CI (voir README_TERMUX.md section Flutter) :
+Sur Android, 127.0.0.1 est joignable par toutes les apps du téléphone :
+le jeton ferme la porte. Toutes les routes l'exigent, sauf `/health`.
+
+## 2. Tester depuis Termux
+
 ```
-flutter build apk --release
+T=$(cat ~/tamagotchi-app/backend/enki_token.txt)
+curl 127.0.0.1:8000/health
+curl -H "X-Enki-Token: $T" 127.0.0.1:8000/creature
+curl -H "X-Enki-Token: $T" -X POST 127.0.0.1:8000/grant \
+  -H "Content-Type: application/json" -d '{"user_id":"demo-user","amount":5}'
 ```
-Puis `adb install build/app/outputs/flutter-apk/app-release.apk` sur le tel.
-Le backend tourne déjà sur le tel (étape 2), l'app s'y connecte en local.
+
+La boucle des dix étapes, à la main :
+
+```
+curl -H "X-Enki-Token: $T" -X POST 127.0.0.1:8000/talk \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":"demo-user","text":"rappelle-moi d'"'"'appeler maman demain à 18h"}'
+# → réponse avec "pending": la carte de permission + action_id. RIEN n'est écrit.
+
+curl -H "X-Enki-Token: $T" -X POST 127.0.0.1:8000/confirm \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":"demo-user","action_id":"<ACTION_ID>","approve":true}'
+# → "TOOL.RESULT_VERIFIED", le chemin du .ics, la promesse passe à "tenue".
+
+curl -H "X-Enki-Token: $T" "127.0.0.1:8000/audit?user_id=demo-user&n=5"
+```
+
+## 3. Tests
+
+```
+cd ~/tamagotchi-app/backend
+python moteur.py --selftest      # 20 tests, invariants C1–C9 de la loi
+python tests/test_server.py      # 11 tests d'intégration HTTP
+```
+
+La CI (`.github/workflows/backend-tests.yml`) rejoue les deux à chaque push.
+
+## 4. App Flutter (build externe recommandé)
+
+L'app pointe sur `http://localhost:8000`. Compiler l'APK sur PC/CI :
+
+```
+flutter build apk --debug --dart-define=ENKI_TOKEN=<JETON>
+adb install app/build/app/outputs/flutter-apk/app-debug.apk
+```
+
+Sans `--dart-define`, colle le jeton dans **Réglages → Jeton local**.
+L'onglet **Parler** montre le pipeline complet : proposition → carte de
+permission → refus/accord → « ✓ vérifié » avec le chemin du fichier.
 
 ## Notes
-- Backend = stdlib Python 3.8+ (urllib/http.server). Aucune dépendance. Tourne partout.
-- Aucune chaîne/portefeuille dans le code app. Conformité store validée.
-- Burn = mock (N4 hard-block). Aucune tx réelle sans validation utilisateur.
+
+- Backend = stdlib Python 3.8+ (`http.server`). Aucune dépendance. Tourne partout.
+- Aucune chaîne/portefeuille. `/iap/verify` refuse (anti pay-to-love, Art. 19).
+- Les carottes se récoltent gratuitement via `/grant`.
+- La créature s'exporte intégralement : `GET /export` (anti-lock-in, Art. 1 & 8).

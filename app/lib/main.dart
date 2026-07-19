@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'api_service.dart';
 import 'companion_provider.dart';
 import 'companion_screen.dart';
+import 'chat_screen.dart';
 import 'garden_screen.dart';
 import 'codex_screen.dart';
 import 'settings_screen.dart';
@@ -56,6 +57,7 @@ class _HomeState extends State<Home> {
     final cycle = provider.creature?.cycle;
     final body = [
       CompanionScreen(provider),
+      ChatScreen(provider),
       GardenScreen(cycle: cycle),
       const CodexScreen(),
       SettingsScreen(
@@ -70,6 +72,7 @@ class _HomeState extends State<Home> {
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.pets), label: 'Compagnon'),
+          NavigationDestination(icon: Icon(Icons.chat_bubble_outline), label: 'Parler'),
           NavigationDestination(icon: Icon(Icons.local_florist), label: 'Jardin'),
           NavigationDestination(icon: Icon(Icons.auto_stories), label: 'Codex'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Réglages'),

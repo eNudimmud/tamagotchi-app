@@ -17,6 +17,9 @@ class CompanionProvider extends ChangeNotifier {
 
   static const String _userId = 'demo-user';
 
+  ApiService get api => _api;
+  String get userId => _userId;
+
   Future<void> refresh() async {
     loading = true;
     error = null;
