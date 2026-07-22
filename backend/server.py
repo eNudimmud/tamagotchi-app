@@ -32,6 +32,7 @@ STATE_FILE = os.path.join(HERE, "enki_state.json")
 EVENT_FILE = os.path.join(HERE, "enki_events.jsonl")
 HOME_ROOT = os.path.join(HERE, "enki_home")
 TOKEN_FILE = os.path.join(HERE, "enki_token.txt")
+FARM_LOG = os.path.join(HERE, "farm_log.jsonl")
 
 FLOOR = 25  # Art. 17 : les besoins ne descendent jamais sous ce plancher par absence
 SCHEMA_VERSION = 1
@@ -626,6 +627,75 @@ class Handler(BaseHTTPRequestHandler):
                     es.etat["identite"]["nom"] = name
                     moteur.sauver(es.home, es.etat)
                 self._send(200, {"name": cr.display_name})
+            elif path == "/farm/log":
+                entry = {
+                    "user_id": uid,
+                    "date": str(data.get("date", time.strftime("%Y-%m-%d"))),
+                    "crop": str(data.get("crop", "")).strip(),
+                    "variety": str(data.get("variety", "")).strip(),
+                    "type": str(data.get("type", "other")).strip(),
+                    "location": str(data.get("location", "")).strip(),
+                    "quantity": str(data.get("quantity", "")).strip(),
+                    "notes": str(data.get("notes", "")).strip(),
+                    "weather": str(data.get("weather", "")).strip(),
+                    "lunar_phase": str(data.get("lunar_phase", "")).strip(),
+                }
+                if not entry["crop"]:
+                    self._send(400, {"error": "crop_required"})
+                    return
+                try:
+                    with open(FARM_LOG, "a", encoding="utf-8") as f:
+                        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+                except Exception as e:
+                    self._send(500, {"error": "write_failed", "detail": str(e)})
+                    return
+                self._send(201, entry)
+            elif path == "/farm/logs":
+                cutoff = str(data.get("since", "")).strip() if False else ""
+                rows = []
+                try:
+                    if os.path.exists(FARM_LOG):
+                        with open(FARM_LOG, "r", encoding="utf-8") as f:
+                            for line in f:
+                                line = line.strip()
+                                if not line:
+                                    continue
+                                try:
+                                    obj = json.loads(line)
+                                except Exception:
+                                    continue
+                                if obj.get("user_id") == uid:
+                                    rows.append(obj)
+                except Exception:
+                    pass
+                rows.sort(key=lambda x: x.get("date", ""), reverse=True)
+                limit = int(data.get("limit", 200))
+                self._send(200, {"user_id": uid, "logs": rows[:max(1, min(500, limit))]})
+            elif path == "/farm/summary":
+                rows = []
+                try:
+                    if os.path.exists(FARM_LOG):
+                        with open(FARM_LOG, "r", encoding="utf-8") as f:
+                            for line in f:
+                                line = line.strip()
+                                if not line:
+                                    continue
+                                try:
+                                    obj = json.loads(line)
+                                except Exception:
+                                    continue
+                                if obj.get("user_id") == uid:
+                                    rows.append(obj)
+                except Exception:
+                    pass
+                by_crop = {}
+                by_type = {}
+                for row in rows:
+                    c = row.get("crop", "unknown")
+                    t = row.get("type", "other")
+                    by_crop[c] = by_crop.get(c, 0) + 1
+                    by_type[t] = by_type.get(t, 0) + 1
+                self._send(200, {"user_id": uid, "total": len(rows), "by_crop": by_crop, "by_type": by_type})
             else:
                 self._send(404, {"error": "not_found"})
 
